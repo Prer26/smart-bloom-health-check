@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,10 @@ import HistoryTable from '@/components/HistoryTable';
 import ImageUpload from '@/components/ImageUpload';
 import DiseaseDetection from '@/components/DiseaseDetection';
 import CareRecommendations from '@/components/CareRecommendations';
+import PlantFace from '@/components/PlantFace';
+import PlantChatbot from '@/components/PlantChatbot';
+import PlantNotifications from '@/components/PlantNotifications';
+import HealthDiary from '@/components/HealthDiary';
 
 interface PredictionHistory {
   id: string;
@@ -169,6 +172,15 @@ const Index = () => {
     }
   };
 
+  const getCurrentMetrics = () => {
+    if (!lightIntensity || !soilMoisture || !temperature) return undefined;
+    return {
+      light: parseFloat(lightIntensity),
+      moisture: parseFloat(soilMoisture),
+      temperature: parseFloat(temperature)
+    };
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
       {/* Animated Background Elements */}
@@ -197,6 +209,19 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8 space-y-8 relative z-10">
+        {/* Plant Face - New Emotional Component */}
+        <div className="flex justify-center">
+          <PlantFace healthStatus={currentPrediction as any} isAnalyzing={isChecking} />
+        </div>
+
+        {/* Plant Notifications */}
+        <PlantNotifications 
+          healthStatus={currentPrediction as any}
+          lightIntensity={lightIntensity ? parseFloat(lightIntensity) : undefined}
+          soilMoisture={soilMoisture ? parseFloat(soilMoisture) : undefined}
+          temperature={temperature ? parseFloat(temperature) : undefined}
+        />
+
         {/* Image Upload Section */}
         <Card className="border-green-200 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm">
           <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
@@ -319,6 +344,16 @@ const Index = () => {
           <CareRecommendations recommendations={careRecommendations} />
         )}
 
+        {/* Plant Care Chatbot - New Feature */}
+        <PlantChatbot />
+
+        {/* Health Diary - New Feature */}
+        <HealthDiary 
+          currentMetrics={getCurrentMetrics()}
+          currentHealthStatus={currentPrediction || undefined}
+          currentImageUrl={uploadedImage || undefined}
+        />
+
         {/* History Table */}
         {history.length > 0 && (
           <Card className="border-green-200 shadow-lg bg-white/90 backdrop-blur-sm">
@@ -334,7 +369,6 @@ const Index = () => {
           </Card>
         )}
 
-        {/* Chart Component */}
         {history.length > 1 && (
           <Card className="border-green-200 shadow-lg bg-white/90 backdrop-blur-sm">
             <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">

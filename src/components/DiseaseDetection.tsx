@@ -37,7 +37,7 @@ const DiseaseDetection: React.FC<DiseaseDetectionProps> = ({ imageUrl, onDetecti
       const results = await classifier(imageUrl);
       console.log('Classification results:', results);
       
-      if (results && results.length > 0) {
+      if (results && Array.isArray(results) && results.length > 0) {
         const topResult = results[0];
         const confidence = (topResult.score * 100).toFixed(1);
         
