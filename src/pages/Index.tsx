@@ -1,13 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Leaf, Droplets, Sun, Thermometer, Clock } from 'lucide-react';
+import { Leaf, Droplets, Sun, Thermometer, Clock, Camera, Upload, Loader2 } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import PlantHealthChart from '@/components/PlantHealthChart';
 import HistoryTable from '@/components/HistoryTable';
+import ImageUpload from '@/components/ImageUpload';
+import DiseaseDetection from '@/components/DiseaseDetection';
+import CareRecommendations from '@/components/CareRecommendations';
 
 interface PredictionHistory {
   id: string;
@@ -15,7 +18,15 @@ interface PredictionHistory {
   soilMoisture: number;
   temperature: number;
   healthStatus: 'Good' | 'Needs Attention' | 'Critical';
+  diseaseDetected?: string;
+  imageUrl?: string;
   timestamp: string;
+}
+
+interface CareRecommendation {
+  title: string;
+  description: string;
+  icon: string;
 }
 
 const Index = () => {
@@ -23,8 +34,11 @@ const Index = () => {
   const [soilMoisture, setSoilMoisture] = useState<string>('');
   const [temperature, setTemperature] = useState<string>('');
   const [currentPrediction, setCurrentPrediction] = useState<string | null>(null);
+  const [diseaseResult, setDiseaseResult] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [history, setHistory] = useState<PredictionHistory[]>([]);
   const [isChecking, setIsChecking] = useState(false);
+  const [careRecommendations, setCareRecommendations] = useState<CareRecommendation[]>([]);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('plantHealthHistory');
@@ -41,6 +55,37 @@ const Index = () => {
       return 'Needs Attention';
     }
     return 'Good';
+  };
+
+  const generateCareRecommendations = (healthStatus: string, diseaseDetected?: string) => {
+    const recommendations: CareRecommendation[] = [];
+
+    if (healthStatus === 'Critical') {
+      recommendations.push(
+        { title: 'Immediate Water', description: 'Your plant needs water immediately. Check soil moisture daily.', icon: '💧' },
+        { title: 'Light Adjustment', description: 'Move to a brighter location with indirect sunlight.', icon: '☀️' },
+        { title: 'Temperature Control', description: 'Keep in a cooler environment, away from direct heat.', icon: '🌡️' }
+      );
+    } else if (healthStatus === 'Needs Attention') {
+      recommendations.push(
+        { title: 'Monitor Watering', description: 'Adjust watering schedule based on soil moisture.', icon: '💧' },
+        { title: 'Light Optimization', description: 'Ensure adequate but not excessive light exposure.', icon: '☀️' }
+      );
+    } else {
+      recommendations.push(
+        { title: 'Maintain Routine', description: 'Continue your current care routine - your plant is thriving!', icon: '✅' },
+        { title: 'Regular Monitoring', description: 'Keep checking metrics weekly to maintain health.', icon: '📊' }
+      );
+    }
+
+    if (diseaseDetected && diseaseDetected !== 'Healthy') {
+      recommendations.push(
+        { title: 'Disease Treatment', description: `Detected: ${diseaseDetected}. Consider organic treatment options.`, icon: '🩺' },
+        { title: 'Isolation', description: 'Keep plant isolated to prevent spread to other plants.', icon: '🚫' }
+      );
+    }
+
+    setCareRecommendations(recommendations);
   };
 
   const handleCheckHealth = async () => {
@@ -69,7 +114,7 @@ const Index = () => {
     setIsChecking(true);
     
     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     const healthStatus = predictPlantHealth(light, moisture, temp);
     setCurrentPrediction(healthStatus);
@@ -80,6 +125,8 @@ const Index = () => {
       soilMoisture: moisture,
       temperature: temp,
       healthStatus,
+      diseaseDetected: diseaseResult || undefined,
+      imageUrl: uploadedImage || undefined,
       timestamp: new Date().toISOString(),
     };
 
@@ -87,6 +134,7 @@ const Index = () => {
     setHistory(updatedHistory);
     localStorage.setItem('plantHealthHistory', JSON.stringify(updatedHistory));
 
+    generateCareRecommendations(healthStatus, diseaseResult);
     setIsChecking(false);
 
     toast({
@@ -122,23 +170,51 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-green-200/20 rounded-full animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-emerald-200/20 rounded-full animate-bounce delay-300"></div>
+        <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-teal-200/20 rounded-full animate-pulse delay-500"></div>
+        <div className="absolute bottom-20 right-1/3 w-28 h-28 bg-green-200/20 rounded-full animate-bounce delay-700"></div>
+      </div>
+
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-green-100 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-full">
+            <div className="p-2 bg-green-100 rounded-full animate-pulse">
               <Leaf className="h-8 w-8 text-green-600" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              Smart Plant Guardian
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Smart Plant Guardian 2.0
+              </h1>
+              <p className="text-green-700 text-sm">🌱📷 AI-Powered Plant Health & Disease Detection</p>
+            </div>
           </div>
-          <p className="text-green-700 mt-2 text-lg">Monitor your plant's health with AI-powered insights</p>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-4 py-8 space-y-8 relative z-10">
+        {/* Image Upload Section */}
+        <Card className="border-green-200 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Camera className="h-6 w-6" />
+              Plant Image Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <ImageUpload onImageUpload={setUploadedImage} />
+            {uploadedImage && (
+              <div className="mt-4">
+                <DiseaseDetection imageUrl={uploadedImage} onDetectionComplete={setDiseaseResult} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Input Section */}
         <Card className="border-green-200 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm">
           <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
@@ -196,7 +272,7 @@ const Index = () => {
             >
               {isChecking ? (
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <Loader2 className="h-5 w-5 animate-spin" />
                   Analyzing Plant Health...
                 </div>
               ) : (
@@ -211,9 +287,9 @@ const Index = () => {
 
         {/* Prediction Result */}
         {currentPrediction && (
-          <Card className="border-green-200 shadow-lg animate-scale-in bg-white/90 backdrop-blur-sm">
+          <Card className="border-green-200 shadow-lg animate-fade-in bg-white/90 backdrop-blur-sm">
             <CardContent className="p-6 text-center">
-              <div className="text-6xl mb-4 animate-fade-in">
+              <div className="text-6xl mb-4 animate-scale-in">
                 {getHealthStatusIcon(currentPrediction)}
               </div>
               <Badge 
@@ -222,13 +298,25 @@ const Index = () => {
               >
                 {currentPrediction}
               </Badge>
+              {diseaseResult && (
+                <div className="mt-4">
+                  <Badge variant="outline" className="text-sm px-4 py-1 bg-purple-50 text-purple-700 border-purple-200">
+                    Disease Status: {diseaseResult}
+                  </Badge>
+                </div>
+              )}
               <p className="text-green-700 mt-4 text-lg">
                 {currentPrediction === 'Good' && "Your plant is thriving! Keep up the great care."}
                 {currentPrediction === 'Needs Attention' && "Your plant could use some adjustments to its environment."}
-                {currentPrediction === 'Critical' && "Immediate action needed! Check the care recommendations."}
+                {currentPrediction === 'Critical' && "Immediate action needed! Check the care recommendations below."}
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Care Recommendations */}
+        {careRecommendations.length > 0 && (
+          <CareRecommendations recommendations={careRecommendations} />
         )}
 
         {/* History Table */}
@@ -260,15 +348,15 @@ const Index = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-green-800 text-white py-8 mt-16">
+      <footer className="bg-green-800 text-white py-8 mt-16 relative z-10">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Leaf className="h-6 w-6" />
-            <span className="text-xl font-semibold">Smart Plant Guardian</span>
+            <span className="text-xl font-semibold">Smart Plant Guardian 2.0</span>
           </div>
-          <p className="text-green-200 mb-4">Helping you grow healthier plants with AI-powered insights</p>
+          <p className="text-green-200 mb-4">🌿 Made by Prerana Iyengar</p>
           <Badge variant="outline" className="bg-white/10 text-green-100 border-green-300">
-            Built with Lovable ❤️
+            Built with Bolt.new ❤️
           </Badge>
         </div>
       </footer>

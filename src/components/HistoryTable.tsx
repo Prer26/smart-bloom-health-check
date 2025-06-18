@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Sun, Droplets, Thermometer } from 'lucide-react';
+import { Sun, Droplets, Thermometer, Camera } from 'lucide-react';
 
 interface PredictionHistory {
   id: string;
@@ -9,6 +9,8 @@ interface PredictionHistory {
   soilMoisture: number;
   temperature: number;
   healthStatus: 'Good' | 'Needs Attention' | 'Critical';
+  diseaseDetected?: string;
+  imageUrl?: string;
   timestamp: string;
 }
 
@@ -76,6 +78,12 @@ const HistoryTable: React.FC<HistoryTableProps> = ({ history }) => {
               </div>
             </th>
             <th className="text-left p-4 font-semibold text-green-700">Health Status</th>
+            <th className="text-left p-4 font-semibold text-green-700">
+              <div className="flex items-center gap-1">
+                <Camera className="h-4 w-4" />
+                Disease Check
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -105,6 +113,18 @@ const HistoryTable: React.FC<HistoryTableProps> = ({ history }) => {
                     <span className="mr-1">{getHealthStatusIcon(record.healthStatus)}</span>
                     {record.healthStatus}
                   </Badge>
+                </td>
+                <td className="p-4">
+                  {record.diseaseDetected ? (
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                    >
+                      {record.diseaseDetected}
+                    </Badge>
+                  ) : (
+                    <span className="text-gray-400 text-sm">No scan</span>
+                  )}
                 </td>
               </tr>
             );
