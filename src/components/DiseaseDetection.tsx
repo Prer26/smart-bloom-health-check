@@ -9,6 +9,11 @@ interface DiseaseDetectionProps {
   onDetectionComplete: (result: string) => void;
 }
 
+interface ClassificationResult {
+  label: string;
+  score: number;
+}
+
 const DiseaseDetection: React.FC<DiseaseDetectionProps> = ({ imageUrl, onDetectionComplete }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -37,8 +42,17 @@ const DiseaseDetection: React.FC<DiseaseDetectionProps> = ({ imageUrl, onDetecti
       const results = await classifier(imageUrl);
       console.log('Classification results:', results);
       
-      if (results && Array.isArray(results) && results.length > 0) {
-        const topResult = results[0];
+      // Handle the results properly with type checking
+      let processedResults: ClassificationResult[] = [];
+      
+      if (Array.isArray(results)) {
+        processedResults = results as ClassificationResult[];
+      } else if (results && typeof results === 'object' && 'label' in results && 'score' in results) {
+        processedResults = [results as ClassificationResult];
+      }
+      
+      if (processedResults.length > 0) {
+        const topResult = processedResults[0];
         const confidence = (topResult.score * 100).toFixed(1);
         
         // Determine if disease is detected based on confidence and label
